@@ -1,6 +1,6 @@
-import discord_bot
+import discord
 from discord.ext import commands
-from discord_bot import option
+from discord import option
 import aiohttp
 import time
 
@@ -12,14 +12,14 @@ with open("token.txt", "r") as f:
     TOKEN = f.read().strip()
 
 # Kombinasi antara commands.Bot dan discord.Bot
-intents = discord_bot.Intents.default()
+intents = discord.Intents.default()
 intents.message_content = True
 
 # Bot untuk command biasa
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Bot untuk slash command
-slash_bot = discord_bot.Bot(intents=intents)
+slash_bot = discord.Bot(intents=intents)
 
 # Event: Bot siap
 @bot.event
@@ -85,7 +85,7 @@ async def tanya(ctx, *, pertanyaan: str = None):
 
 # Slash Command: /ping
 @slash_bot.slash_command(name="ping", description="Cek koneksi ke API lokal")
-async def ping(ctx: discord_bot.ApplicationContext):
+async def ping(ctx: discord.ApplicationContext):
     await ctx.defer()
     payload = {
         "model": MODEL_NAME,
@@ -109,7 +109,7 @@ async def ping(ctx: discord_bot.ApplicationContext):
 # Slash Command: /tanya
 @slash_bot.slash_command(name="tanya", description="Kirim pertanyaan ke API lokal")
 @option("pertanyaan", str, description="Apa yang ingin kamu tanyakan?")
-async def tanya(ctx: discord_bot.ApplicationContext, pertanyaan: str):
+async def tanya(ctx: discord.ApplicationContext, pertanyaan: str):
     await ctx.defer()
     payload = {
         "model": MODEL_NAME,

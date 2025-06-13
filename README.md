@@ -17,7 +17,7 @@ Bot Discord dengan GTP4ALL
 
 ```bash
 .
-├── discord_bot.py  # File utama bot
+├── bot.py          # File utama bot
 ├── token.txt       # File berisi token bot Discord (hanya token, tanpa spasi)
 ├── README.md       # Dokumentasi proyek
 ````
@@ -54,7 +54,7 @@ MTEyMzQ1Njc4OTAxMjM0NTY3ODkw.YXcD0A.AbcdEfghIjklMnopQrstUvwxYz
 3️⃣ Jalankan bot:
 
 ```bash
-python discord_bot.py
+python bot.py
 ```
 
 ---
