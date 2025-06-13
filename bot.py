@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import option
 import aiohttp
 import time
 
@@ -10,19 +11,29 @@ MODEL_NAME = "Lama 3 8B Instruct"
 with open("token.txt", "r") as f:
     TOKEN = f.read().strip()
 
+# Kombinasi antara commands.Bot dan discord.Bot
 intents = discord.Intents.default()
 intents.message_content = True
 
+# Bot untuk command biasa
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# Bot untuk slash command
+slash_bot = discord.Bot(intents=intents)
 
 # Event: Bot siap
 @bot.event
 async def on_ready():
     print(f'✅ Bot {bot.user} sudah online!')
 
-# Command: !ping (command biasa)
+@slash_bot.event
+async def on_ready():
+    print(f'✅ Slash Bot {slash_bot.user} sudah online!')
+
+# Command: !ping (untuk command biasa)
 @bot.command()
 async def ping_bot(ctx):
+    """Cek koneksi ke API lokal dengan command biasa."""
     payload = {
         "model": MODEL_NAME,
         "messages": [{"role": "user", "content": "ping"}],
@@ -42,9 +53,10 @@ async def ping_bot(ctx):
     except Exception as e:
         await ctx.send(f'❌ Tidak bisa konek ke API.\n```{e}```')
 
-# Command: !tanya (command biasa)
+# Command: !tanya (untuk command biasa)
 @bot.command()
 async def tanya(ctx, *, pertanyaan: str = None):
+    """Kirim pertanyaan ke API dengan command biasa."""
     if pertanyaan is None:
         await ctx.send("❌ Kamu harus memberikan pertanyaan setelah perintah `!tanya`.")
         return
@@ -70,10 +82,11 @@ async def tanya(ctx, *, pertanyaan: str = None):
     except Exception as e:
         await ctx.send(f'❌ Terjadi error:\n```{e}```')
 
+
 # Slash Command: /ping
-@bot.tree.command(name="ping", description="Cek koneksi ke API lokal")
-async def slash_ping(interaction: discord.Interaction):
-    await interaction.response.defer()
+@slash_bot.slash_command(name="ping", description="Cek koneksi ke API lokal")
+async def ping(ctx: discord.ApplicationContext):
+    await ctx.defer()
     payload = {
         "model": MODEL_NAME,
         "messages": [{"role": "user", "content": "ping"}],
@@ -87,16 +100,17 @@ async def slash_ping(interaction: discord.Interaction):
             async with session.post(API_URL, json=payload) as response:
                 duration = int((time.time() - start) * 1000)
                 if response.status == 200:
-                    await interaction.followup.send(f'✅ API aktif! Respon dalam {duration}ms.')
+                    await ctx.respond(f'✅ API aktif! Respon dalam {duration}ms.')
                 else:
-                    await interaction.followup.send(f'⚠️ API error. Status: {response.status}')
+                    await ctx.respond(f'⚠️ API error. Status: {response.status}')
     except Exception as e:
-        await interaction.followup.send(f'❌ Tidak bisa konek ke API.\n```{e}```')
+        await ctx.respond(f'❌ Tidak bisa konek ke API.\n```{e}```')
 
 # Slash Command: /tanya
-@bot.tree.command(name="tanya", description="Kirim pertanyaan ke API lokal")
-async def slash_tanya(interaction: discord.Interaction, pertanyaan: str):
-    await interaction.response.defer()
+@slash_bot.slash_command(name="tanya", description="Kirim pertanyaan ke API lokal")
+@option("pertanyaan", str, description="Apa yang ingin kamu tanyakan?")
+async def tanya(ctx: discord.ApplicationContext, pertanyaan: str):
+    await ctx.defer()
     payload = {
         "model": MODEL_NAME,
         "messages": [{"role": "user", "content": pertanyaan}],
@@ -112,17 +126,12 @@ async def slash_tanya(interaction: discord.Interaction, pertanyaan: str):
                     jawaban = data['choices'][0]['message']['content']
                     MAX_LEN = 2000
                     for i in range(0, len(jawaban), MAX_LEN):
-                        await interaction.followup.send(jawaban[i:i+MAX_LEN])
+                        await ctx.send_followup(jawaban[i:i+MAX_LEN])
                 else:
-                    await interaction.followup.send(f'⚠️ Gagal ambil jawaban. Status: {response.status}')
+                    await ctx.respond(f'⚠️ Gagal ambil jawaban. Status: {response.status}')
     except Exception as e:
-        await interaction.followup.send(f'❌ Terjadi error:\n```{e}```')
-
-# Sinkronisasi command tree (agar slash command muncul)
-@bot.event
-async def on_ready():
-    await bot.tree.sync()
-    print(f'✅ Bot {bot.user} sudah online dan command tree sudah sinkron.')
+        await ctx.respond(f'❌ Terjadi error:\n```{e}```')
 
 # Jalankan bot
 bot.run(TOKEN)
+slash_bot.run(TOKEN)
