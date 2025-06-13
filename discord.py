@@ -6,7 +6,10 @@ import time
 
 API_URL = "http://localhost:4891/v1/chat/completions"
 MODEL_NAME = "Lama 3 8B Instruct"
-TOKEN = 'TOKEN BOT DISCORD PASTE HERE !!!!!!'
+
+# Membaca token dari file token.txt
+with open("token.txt", "r") as f:
+    TOKEN = f.read().strip()
 
 # Kombinasi antara commands.Bot dan discord.Bot
 intents = discord.Intents.default()
