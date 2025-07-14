@@ -15,6 +15,9 @@ EMBED_URL = f"{API_BASE}/api/v0/embeddings"
 with open("token.txt", "r") as f:
     TOKEN = f.read().strip()
 
+# Model default
+model_id = ""
+
 intents = discord.Intents.default()
 intents.message_content = True
 bot = discord.Bot(command_prefix="!", intents=intents)
@@ -49,13 +52,23 @@ async def modelinfo(ctx, model: str):
     else:
         await ctx.respond(f"❌ Error {st}")
 
+@bot.command(description="Pilih model yang akan digunakan")
+@option("model", str, description="Model ID dari /models")
+async def pilihmodel(ctx, model: str):
+    global model_id
+    model_id = model
+    await ctx.respond(f"✅ Model aktif diset ke: `{model}`")
+
 # ======== CHAT COMPLETION =========
 @bot.command(description="Chat dengan LM Studio (fitur lengkap)")
 @option("prompt", str, description="Apa pertanyaanmu?")
 async def chat(ctx, prompt: str):
     await ctx.defer()
+    if not model_id:
+        await ctx.send_followup("❗ Model belum dipilih. Gunakan `/pilihmodel`")
+        return
     payload = {
-        "model": "your-model-id",
+        "model": model_id,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.5,
         "stream": False,
@@ -100,8 +113,11 @@ async def chat(ctx, prompt: str):
 @option("prompt", str, description="Prompt teks biasa")
 async def complete(ctx, prompt: str):
     await ctx.defer()
+    if not model_id:
+        await ctx.send_followup("❗ Model belum dipilih. Gunakan `/pilihmodel`")
+        return
     payload = {
-        "model": "your-model-id",
+        "model": model_id,
         "prompt": prompt,
         "max_tokens": 100
     }
@@ -117,8 +133,11 @@ async def complete(ctx, prompt: str):
 @option("text", str, description="Teks untuk diembed")
 async def embed(ctx, text: str):
     await ctx.defer()
+    if not model_id:
+        await ctx.send_followup("❗ Model belum dipilih. Gunakan `/pilihmodel`")
+        return
     payload = {
-        "model": "your-embed-model",
+        "model": model_id,
         "input": [text]
     }
     async with aiohttp.ClientSession() as s:
